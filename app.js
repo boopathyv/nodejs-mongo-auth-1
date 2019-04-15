@@ -12,8 +12,4 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use('/user/', userController);
 
-app.get('/', (req, res) => {
-	res.json({ working: 'yes' });
-});
-
 app.listen(3000, () => console.log('server is running'));

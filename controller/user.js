@@ -58,4 +58,19 @@ router.post('/login', (req, res) => {
 		});
 });
 
+router.get('/gettoken', verifyToken, (req, res) => {
+	const accessToken = jwt.sign(
+		{ email: req.user.email },
+		process.env.tokenSecret,
+		{
+			expiresIn: process.env.tokenLife
+		}
+	);
+	res.header('access-token', accessToken).send({ user: req.user });
+});
+
+router.get('/getuser', verifyToken, (req, res) => {
+	res.json({ user: req.user });
+});
+
 module.exports = router;
