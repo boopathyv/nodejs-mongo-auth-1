@@ -24,16 +24,22 @@ router.post('/signup', (req, res) => {
 	);
 	const user = new User({ name: name, email: email, password: password });
 	user.refreshToken.push(refreshToken);
-	user
-		.save()
-		.then(user => {
-			res.header('access-token', accessToken);
-			res.header('refresh-token', refreshToken).send({ user: user });
-		})
-		.catch(error => {
+	saveUser(user,res,accessToken,refreshToken);
+});
+
+function saveUser(user,res,accessToken,refreshToken,message){
+		user.save()
+			.then(user => {
+				if(accessToken){
+					res.header('access-token', accessToken);
+					res.header('refresh-token', refreshToken).send({ user: user });
+				}else if(message){
+					res.json({'result':message});
+				}
+		}).catch(error => {
 			res.json({ error: error.message });
 		});
-});
+}
 
 router.post('/login', (req, res) => {
 	const email = req.body.email;
@@ -63,9 +69,16 @@ router.post('/login', (req, res) => {
 					{ email: email },
 					process.env.refreshTokenSecret
 				);
+
+				let newRefreshToken = {};
+				newRefreshToken.ip = ip;
+				newRefreshToken.token = refreshToken;
+				user.refreshToken.push(newRefreshToken);
+				saveUser(user,res,accessToken,refreshToken);
+			}else{
+				res.header('refresh-token', refreshToken);
+				res.header('access-token', accessToken).send({ user: user });
 			}
-			res.header('refresh-token', refreshToken);
-			res.header('access-token', accessToken).send({ user: user });
 		})
 		.catch(error => {
 			res.json({ error: error.message });
@@ -82,14 +95,22 @@ router.get('/getaccesstoken', verifyToken, (req, res) => {
 
 // to be done
 router.post('/deletetoken', verifyToken, (req, res) => {
-	let ip = req.body.ip;
+	let ip = req.ip;
 	let user = req.user;
 	User.findOne({ email: user.email })
 		.then(user => {
+			let flag = false;
+			let refreshTokenArray = [];
 			for (let i = 0; i < user.refreshToken.length; i++) {
-				if (ip == user.refreshToken[i].ip) {
-					user.refreshToken[i].token = null;
+				if (ip != user.refreshToken[i].ip) {
+					refreshTokenArray.push(user.refreshToken[i]);
+				}else{
+					flag = true;
 				}
+			}
+			if(flag){
+				user.refreshToken = refreshTokenArray;
+				saveUser(user,res,null,null,'Token Deleted Successfully');
 			}
 		})
 		.catch(error => {
