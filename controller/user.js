@@ -9,13 +9,16 @@ router.post('/signup', (req, res) => {
 	const name = req.body.name;
 	const email = req.body.email;
 	const password = req.body.password;
+	const ip = req.ip;
 	if (!name || !email || !password) {
 		res.json({ error: 'insufficient data' });
 	}
 	const accessToken = jwt.sign({ email: email }, process.env.tokenSecret, {
 		expiresIn: process.env.tokenLife
 	});
-	const refreshToken = jwt.sign(
+	let refreshToken = {};
+	refreshToken.ip = ip;
+	refreshToken.token = jwt.sign(
 		{ email: email },
 		process.env.refreshTokenSecret
 	);
@@ -35,42 +38,74 @@ router.post('/signup', (req, res) => {
 router.post('/login', (req, res) => {
 	const email = req.body.email;
 	const password = req.body.password;
+	const ip = req.ip;
 	if (!email || !password) {
 		res.json({ error: 'insufficient data' });
 	}
 	const accessToken = jwt.sign({ email: email }, process.env.tokenSecret, {
 		expiresIn: process.env.tokenLife
 	});
-	const refreshToken = jwt.sign(
-		{ email: email },
-		process.env.refreshTokenSecret
-	);
-	User.find({ email: email })
+
+	User.findOne({ email: email })
 		.then(user => {
 			if (!user) {
 				res.json({ error: 'User does not exist' });
 			}
-			res.header('access-token', accessToken);
-			res.header('refresh-token', refreshToken).send({ user: user });
+			let refreshToken = null;
+			for (let i = 0; i < user.refreshToken.length; i++) {
+				if (ip == user.refreshToken[i].ip) {
+					refreshToken = user.refreshToken[i].token;
+					break;
+				}
+			}
+			if (!refreshToken) {
+				refreshToken = jwt.sign(
+					{ email: email },
+					process.env.refreshTokenSecret
+				);
+			}
+			res.header('refresh-token', refreshToken);
+			res.header('access-token', accessToken).send({ user: user });
 		})
 		.catch(error => {
 			res.json({ error: error.message });
 		});
 });
 
-router.get('/gettoken', verifyToken, (req, res) => {
-	const accessToken = jwt.sign(
-		{ email: req.user.email },
-		process.env.tokenSecret,
-		{
-			expiresIn: process.env.tokenLife
-		}
-	);
-	res.header('access-token', accessToken).send({ user: req.user });
+router.get('/getaccesstoken', verifyToken, (req, res) => {
+	const user = req.user;
+	const accessToken = jwt.sign({ email: user.email }, process.env.tokenSecret, {
+		expiresIn: process.env.tokenLife
+	});
+	res.header('access-token', accessToken).send({ user: user });
 });
 
-router.get('/getuser', verifyToken, (req, res) => {
-	res.json({ user: req.user });
+// to be done
+router.post('/deletetoken', verifyToken, (req, res) => {
+	let ip = req.body.ip;
+	let user = req.user;
+	User.findOne({ email: user.email })
+		.then(user => {
+			for (let i = 0; i < user.refreshToken.length; i++) {
+				if (ip == user.refreshToken[i].ip) {
+					user.refreshToken[i].token = null;
+				}
+			}
+		})
+		.catch(error => {
+			res.json({ error: error.message });
+		});
+});
+
+router.get('/gettokens', verifyToken, (req, res) => {
+	let user = req.user;
+	User.findOne({ email: user.email })
+		.then(user => {
+			res.json({ refreshToken: user.refreshToken });
+		})
+		.catch(error => {
+			res.json({ error: error.message });
+		});
 });
 
 module.exports = router;

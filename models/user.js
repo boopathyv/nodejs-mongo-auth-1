@@ -17,10 +17,12 @@ const userSchema = mongoose.Schema({
 		required: true,
 		select: false
 	},
-	refreshToken: {
-		type: [String],
-		select: false
-	}
+	refreshToken: [
+		{
+			ip: { type: String },
+			token: { type: String }
+		}
+	]
 });
 
 userSchema.methods.toJSON = function() {
