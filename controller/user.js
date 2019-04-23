@@ -11,7 +11,7 @@ router.post('/signup', (req, res) => {
 	const password = req.body.password;
 	const ip = req.ip;
 	if (!name || !email || !password) {
-		res.json({ error: 'insufficient data' });
+		return res.json({ error: 'insufficient data' });
 	}
 	const accessToken = jwt.sign({ email: email }, process.env.tokenSecret, {
 		expiresIn: process.env.tokenLife
