@@ -4,6 +4,7 @@ const router = express.Router();
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const verifyToken = require('../middleware/verifyToken');
+const bcrypt = require('bcryptjs');
 
 router.post('/signup', (req, res) => {
 	const name = req.body.name;
@@ -24,7 +25,7 @@ router.post('/signup', (req, res) => {
 	);
 	const user = new User({ name: name, email: email, password: password });
 	user.refreshToken.push(refreshToken);
-	saveUser(user,res,accessToken,refreshToken);
+	saveUser(user,res,accessToken,refreshToken.token);
 });
 
 function saveUser(user,res,accessToken,refreshToken,message){
@@ -46,16 +47,19 @@ router.post('/login', (req, res) => {
 	const password = req.body.password;
 	const ip = req.ip;
 	if (!email || !password) {
-		res.json({ error: 'insufficient data' });
+		return res.json({ error: 'insufficient data' });
 	}
 	const accessToken = jwt.sign({ email: email }, process.env.tokenSecret, {
 		expiresIn: process.env.tokenLife
 	});
 
-	User.findOne({ email: email })
+	User.findOne({ email: email})
 		.then(user => {
 			if (!user) {
-				res.json({ error: 'User does not exist' });
+				return res.json({ error: 'User does not exist' });
+			}
+			if(!bcrypt.compareSync(password, user.password)){
+				return res.json({ error: 'User does not exist' });
 			}
 			let refreshToken = null;
 			for (let i = 0; i < user.refreshToken.length; i++) {
@@ -77,11 +81,11 @@ router.post('/login', (req, res) => {
 				saveUser(user,res,accessToken,refreshToken);
 			}else{
 				res.header('refresh-token', refreshToken);
-				res.header('access-token', accessToken).send({ user: user });
+				return res.header('access-token', accessToken).send({ user: user });
 			}
 		})
 		.catch(error => {
-			res.json({ error: error.message });
+			return res.json({ error: error.message });
 		});
 });
 
