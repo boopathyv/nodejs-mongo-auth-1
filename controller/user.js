@@ -1,7 +1,7 @@
 'use strict';
 const express = require('express');
 const router = express.Router();
-const User = require('../models/user');
+const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const {
 	verifyAccessToken,
@@ -26,10 +26,7 @@ router.post('/signup', (req, res) => {
 	let refreshToken;
 	let newUser = new User({ name, email, password });
 	newUser
-		.save()
-		.then(() => {
-			return newUser.createSession(req);
-		})
+		.createSession(req)
 		.then(refreshToken => {
 			refreshToken = refreshToken;
 			return newUser.generateAccessToken();
@@ -43,38 +40,7 @@ router.post('/signup', (req, res) => {
 		.catch(error => {
 			res.json({ error: error.message });
 		});
-	// const accessToken = jwt.sign({ email: email }, process.env.tokenSecret, {
-	// 	expiresIn: process.env.tokenLife
-	// });
-	// let refreshToken = {};
-	// refreshToken.ip = ip;
-	// refreshToken.browser = req.browser;
-	// refreshToken.os = req.os;
-	// refreshToken.date = req.date;
-	// refreshToken.token = jwt.sign(
-	// 	{ email: email },
-	// 	process.env.refreshTokenSecret
-	// );
-	// const user = new User({ name: name, email: email, password: password });
-	// user.refreshToken.push(refreshToken);
-	// saveUser(user, res, accessToken, refreshToken.token);
 });
-
-// function saveUser(user, res, accessToken, refreshToken, message) {
-// 	user
-// 		.save()
-// 		.then(user => {
-// 			if (accessToken) {
-// 				res.header('access-token', accessToken);
-// 				res.header('refresh-token', refreshToken).send({ user: user });
-// 			} else if (message) {
-// 				res.json({ result: message });
-// 			}
-// 		})
-// 		.catch(error => {
-// 			res.json({ error: error.message });
-// 		});
-// }
 
 // router.post('/login', (req, res) => {
 // 	const email = req.body.email;
@@ -118,9 +84,9 @@ router.post('/signup', (req, res) => {
 // 				return res.header('access-token', accessToken).send({ user: user });
 // 			}
 // 		})
-// 		.catch(error => {
-// 			return res.json({ error: error.message });
-// 		});
+// 	.catch(error => {
+// 		return res.json({ error: error.message });
+// 	});
 // });
 
 // router.get('/getaccesstoken', verifyRefreshToken, (req, res) => {

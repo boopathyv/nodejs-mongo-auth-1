@@ -1,6 +1,5 @@
 'use strict';
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
 
 const verifyToken = (token, secret, req, res, next) => {
 	jwt.verify(token, secret, (err, decoded) => {

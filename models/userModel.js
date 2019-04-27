@@ -47,7 +47,11 @@ userSchema.methods.toJSON = function() {
 	let user = this;
 	let userObject = user.toObject();
 	delete userObject.password;
-	delete userObject.sessions;
+	delete userObject.sessions[0].ip;
+	delete userObject.sessions[0].token;
+	delete userObject.sessions[0].browser;
+	delete userObject.sessions[0].os;
+	delete userObject.sessions[0].date;
 	return userObject;
 };
 
@@ -86,6 +90,7 @@ userSchema.methods.generateAccessToken = function() {
 	return accessToken;
 };
 
+/* helper methods */
 const saveSession = (user, session) => {
 	return new Promise((resolve, reject) => {
 		user.sessions.push({
