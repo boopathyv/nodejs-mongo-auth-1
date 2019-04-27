@@ -1,13 +1,13 @@
 {
     "development": {
         "mongoURL": "mongodb://127.0.0.1:27017/mongo-auth",
-        "tokenSecret": "",
+        "accessTokenSecret": "",
         "refreshTokenSecret": "",
         "tokenLife": "10m"
     },
     "test": {
         "mongoURL": "mongodb://127.0.0.1:27017/mongo-auth",
-        "tokenSecret": "",
+        "accessTokenSecret": "",
         "refreshTokenSecret": "",
         "tokenLife": "10m"
     }

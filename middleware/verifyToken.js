@@ -2,36 +2,30 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
-const verifyToken = (req, res, next) => {
-	const accessToken = req.header('access-token');
-	const refreshToken = req.header('refresh-token');
-	let secret = null;
-	let token = null;
-
-	if (accessToken) {
-		secret = process.env.tokenSecret;
-		token = accessToken;
-	} else {
-		secret = process.env.refreshTokenSecret;
-		token = refreshToken;
-	}
-
+const verifyToken = (token, secret, req, res, next) => {
 	jwt.verify(token, secret, (err, decoded) => {
 		if (err) {
 			return res.json({ error: 'invalid token' });
+		} else {
+			req.user_id = decoded._id;
+			next();
 		}
-		User.findOne({ email: decoded.email })
-			.then(user => {
-				if (!user) {
-					return res.json({ error: 'user not found' });
-				}
-				req.user = user;
-				next();
-			})
-			.catch(error => {
-				return res.json({ error: error.message });
-			});
 	});
 };
 
-module.exports = verifyToken;
+const verifyAccessToken = (req, res, next) => {
+	const token = req.header('x-access-token');
+	const secret = process.env.accessTokenSecret;
+	verifyToken(token, secret, req, res, next);
+};
+
+const verifyRefreshToken = (req, res, next) => {
+	const token = req.header('x-refresh-token');
+	const secret = process.env.refreshTokenSecret;
+	verifyToken(token, secret, req, res, next);
+};
+
+module.exports = {
+	verifyAccessToken,
+	verifyRefreshToken
+};
