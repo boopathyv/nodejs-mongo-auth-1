@@ -7,6 +7,7 @@ const {
 	verifyAccessToken,
 	verifyRefreshToken
 } = require('../middleware/verifyToken');
+const { isUserVerified } = require('../middleware/isUserVerified');
 const bcrypt = require('bcryptjs');
 
 router.get('/test', (req, res) => {
@@ -23,18 +24,18 @@ router.post('/signup', (req, res) => {
 	if (!name || !email || !password) {
 		return res.json({ error: 'insufficient data' });
 	}
-	let refreshToken;
+	let userRefreshToken;
 	let newUser = new User({ name, email, password });
 	newUser
 		.createSession(req)
 		.then(refreshToken => {
-			refreshToken = refreshToken;
+			userRefreshToken = refreshToken;
 			return newUser.generateAccessToken();
 		})
-		.then(accessToken => {
+		.then(userAccessToken => {
 			res
-				.header('x-refresh-token', refreshToken)
-				.header('x-access-token', accessToken)
+				.header('x-refresh-token', userRefreshToken)
+				.header('x-access-token', userAccessToken)
 				.send(newUser);
 		})
 		.catch(error => {

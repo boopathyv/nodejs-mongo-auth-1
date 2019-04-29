@@ -20,6 +20,10 @@ const userSchema = mongoose.Schema({
 		minlenght: 8,
 		required: true
 	},
+	isVerified: {
+		type: Boolean,
+		default: false
+	},
 	sessions: [
 		{
 			ip: { type: String },
@@ -47,11 +51,7 @@ userSchema.methods.toJSON = function() {
 	let user = this;
 	let userObject = user.toObject();
 	delete userObject.password;
-	delete userObject.sessions[0].ip;
-	delete userObject.sessions[0].token;
-	delete userObject.sessions[0].browser;
-	delete userObject.sessions[0].os;
-	delete userObject.sessions[0].date;
+	delete userObject.sessions;
 	return userObject;
 };
 
