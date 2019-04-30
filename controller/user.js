@@ -20,6 +20,7 @@ router.post('/signup', (req, res) => {
 	if (!name || !email || !password) {
 		return res.json({ error: 'insufficient data' });
 	}
+
 	let userRefreshToken;
 	let newUser = new User({ name, email, password });
 	newUser
@@ -42,9 +43,11 @@ router.post('/signup', (req, res) => {
 router.post('/login', (req, res) => {
 	const email = req.body.email;
 	const password = req.body.password;
+
 	if (!email || !password) {
 		return res.json({ error: 'insufficient data' });
 	}
+
 	let userRefreshToken;
 	let currentUser;
 	User.findByCredentials(email, password)
@@ -81,6 +84,11 @@ router.get(
 router.post('/deletetoken', verifyAccessToken, isUserVerified, (req, res) => {
 	const sessionDocId = req.body.sessionid;
 	const user = req.user;
+
+	if (!sessionDocId) {
+		return res.json({ error: 'insufficient data' });
+	}
+
 	user.sessions.id(sessionDocId).remove();
 	user
 		.save()
@@ -96,7 +104,6 @@ router.get('/gettokens', verifyAccessToken, isUserVerified, (req, res) => {
 	const id = req.user_id;
 	User.findOne({ _id: id })
 		.then(user => {
-			// returns all information for now, but should exclude tokens
 			res.json({ sessions: user.sessions });
 		})
 		.catch(error => {
