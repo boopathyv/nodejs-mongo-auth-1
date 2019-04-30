@@ -7,6 +7,7 @@ const {
 	verifyAccessToken,
 	verifyRefreshToken
 } = require('../middleware/verifyToken');
+const { getAccessToken, getRefreshToken } = require('../utils/getToken');
 const { isUserVerified } = require('../middleware/isUserVerified');
 const bcrypt = require('bcryptjs');
 
@@ -93,13 +94,11 @@ router.post('/login', (req, res) => {
 		});
 });
 
-// router.get('/getaccesstoken', verifyRefreshToken, (req, res) => {
-// 	const user = req.user;
-// 	const accessToken = jwt.sign({ email: user.email }, process.env.tokenSecret, {
-// 		expiresIn: process.env.tokenLife
-// 	});
-// 	res.header('access-token', accessToken).send({ user: user });
-// });
+router.get('/getaccesstoken', verifyRefreshToken, (req, res) => {
+	const id = req.user_id;
+	const accessToken = getAccessToken(id);
+	res.header('x-access-token', accessToken).send({ user_id: id });
+});
 
 // // to be done
 // router.post('/deletetoken', verifyAccessToken, (req, res) => {

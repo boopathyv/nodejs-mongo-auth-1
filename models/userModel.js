@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { getUserAgent } = require('../utils/getUserAgent');
-const jwt = require('jsonwebtoken');
+const { getAccessToken, getRefreshToken } = require('../utils/getToken');
 
 const userSchema = mongoose.Schema({
 	name: {
@@ -108,19 +108,12 @@ userSchema.methods.createSession = function(req) {
 
 userSchema.methods.generateRefreshToken = function() {
 	let user = this;
-	let refreshToken = jwt.sign(
-		{ _id: user._id },
-		process.env.refreshTokenSecret
-	);
-	return refreshToken;
+	return getRefreshToken(user._id);
 };
 
 userSchema.methods.generateAccessToken = function() {
 	let user = this;
-	let accessToken = jwt.sign({ _id: user._id }, process.env.accessTokenSecret, {
-		expiresIn: process.env.tokenLife
-	});
-	return accessToken;
+	return getAccessToken(user._id);
 };
 
 /* Static methods */
