@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { getUserAgent } = require('../utils/getUserAgent');
 const { getAccessToken, getRefreshToken } = require('../utils/getToken');
+const sessionSchema = require('./sessionModel');
 
 const userSchema = mongoose.Schema({
 	name: {
@@ -25,16 +26,7 @@ const userSchema = mongoose.Schema({
 		default: true
 		//change default to false, once mail functionality is included
 	},
-	sessions: [
-		{
-			ip: { type: String },
-			token: { type: String },
-			browser: { type: String },
-			os: { type: String },
-			date: { type: Date }
-			//location to be added
-		}
-	]
+	sessions: [sessionSchema]
 });
 
 /* middlewares */

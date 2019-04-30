@@ -10,34 +10,7 @@ const {
 const { getAccessToken, getRefreshToken } = require('../utils/getToken');
 const { isUserVerified } = require('../middleware/isUserVerified');
 const bcrypt = require('bcryptjs');
-
 const { getUserAgent } = require('../utils/getUserAgent');
-
-router.get('/test', (req, res) => {
-	const email = req.query.email;
-	const userAgent = getUserAgent(req);
-	console.log('useragent', userAgent);
-	User.findOne(
-		{
-			email
-		},
-		{
-			sessions: {
-				$elemMatch: {
-					ip: userAgent.ip,
-					browser: userAgent.browser,
-					os: userAgent.os
-				}
-			}
-		}
-	)
-		.then(user => {
-			res.json({ token: user.sessions[0].token });
-		})
-		.catch(error => {
-			res.json({ error: error.message });
-		});
-});
 
 router.post('/signup', (req, res) => {
 	const name = req.body.name;
@@ -108,7 +81,7 @@ router.get(
 router.post('/deletetoken', verifyAccessToken, isUserVerified, (req, res) => {
 	const sessionDocId = req.body.sessionid;
 	const user = req.user;
-	const etho = user.sessions.id(sessionDocId).remove();
+	user.sessions.id(sessionDocId).remove();
 	user
 		.save()
 		.then(user => {
