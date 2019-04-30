@@ -5,7 +5,9 @@ const getRefreshToken = id => {
 };
 
 const getAccessToken = id => {
-	return jwt.sign({ _id: id }, process.env.refreshTokenSecret);
+	return jwt.sign({ _id: id }, process.env.accessTokenSecret, {
+		expiresIn: process.env.tokenLife
+	});
 };
 
 module.exports = {

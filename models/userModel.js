@@ -22,7 +22,8 @@ const userSchema = mongoose.Schema({
 	},
 	isVerified: {
 		type: Boolean,
-		default: false
+		default: true
+		//change default to false, once mail functionality is included
 	},
 	sessions: [
 		{

@@ -94,46 +94,41 @@ router.post('/login', (req, res) => {
 		});
 });
 
-router.get('/getaccesstoken', verifyRefreshToken, (req, res) => {
-	const id = req.user_id;
-	const accessToken = getAccessToken(id);
-	res.header('x-access-token', accessToken).send({ user_id: id });
+router.get(
+	'/getaccesstoken',
+	verifyRefreshToken,
+	isUserVerified,
+	(req, res) => {
+		const id = req.user_id;
+		const accessToken = getAccessToken(id);
+		res.header('x-access-token', accessToken).send({ user_id: id });
+	}
+);
+
+router.post('/deletetoken', verifyAccessToken, isUserVerified, (req, res) => {
+	const sessionDocId = req.body.sessionid;
+	const user = req.user;
+	const etho = user.sessions.id(sessionDocId).remove();
+	user
+		.save()
+		.then(user => {
+			res.json({ user: user });
+		})
+		.catch(error => {
+			res.json({ error: error.message });
+		});
 });
 
-// // to be done
-// router.post('/deletetoken', verifyAccessToken, (req, res) => {
-// 	let ip = req.ip;
-// 	let user = req.user;
-// 	User.findOne({ email: user.email })
-// 		.then(user => {
-// 			let flag = false;
-// 			let refreshTokenArray = [];
-// 			for (let i = 0; i < user.refreshToken.length; i++) {
-// 				if (ip != user.refreshToken[i].ip) {
-// 					refreshTokenArray.push(user.refreshToken[i]);
-// 				} else {
-// 					flag = true;
-// 				}
-// 			}
-// 			if (flag) {
-// 				user.refreshToken = refreshTokenArray;
-// 				saveUser(user, res, null, null, 'Token Deleted Successfully');
-// 			}
-// 		})
-// 		.catch(error => {
-// 			res.json({ error: error.message });
-// 		});
-// });
-
-// router.get('/gettokens', verifyAccessToken, (req, res) => {
-// 	let user = req.user;
-// 	User.findOne({ email: user.email })
-// 		.then(user => {
-// 			res.json({ refreshToken: user.refreshToken });
-// 		})
-// 		.catch(error => {
-// 			res.json({ error: error.message });
-// 		});
-// });
+router.get('/gettokens', verifyAccessToken, isUserVerified, (req, res) => {
+	const id = req.user_id;
+	User.findOne({ _id: id })
+		.then(user => {
+			// returns all information for now, but should exclude tokens
+			res.json({ sessions: user.sessions });
+		})
+		.catch(error => {
+			res.json({ error: error.message });
+		});
+});
 
 module.exports = router;
