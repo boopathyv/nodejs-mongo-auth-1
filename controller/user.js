@@ -10,10 +10,32 @@ const {
 const { isUserVerified } = require('../middleware/isUserVerified');
 const bcrypt = require('bcryptjs');
 
+const { getUserAgent } = require('../utils/getUserAgent');
+
 router.get('/test', (req, res) => {
+	const email = req.query.email;
 	const userAgent = getUserAgent(req);
-	console.log(userAgent);
-	res.json({ user: 'ok' });
+	console.log('useragent', userAgent);
+	User.findOne(
+		{
+			email
+		},
+		{
+			sessions: {
+				$elemMatch: {
+					ip: userAgent.ip,
+					browser: userAgent.browser,
+					os: userAgent.os
+				}
+			}
+		}
+	)
+		.then(user => {
+			res.json({ token: user.sessions[0].token });
+		})
+		.catch(error => {
+			res.json({ error: error.message });
+		});
 });
 
 router.post('/signup', (req, res) => {
@@ -43,52 +65,33 @@ router.post('/signup', (req, res) => {
 		});
 });
 
-// router.post('/login', (req, res) => {
-// 	const email = req.body.email;
-// 	const password = req.body.password;
-// 	const ip = req.ip;
-// 	if (!email || !password) {
-// 		return res.json({ error: 'insufficient data' });
-// 	}
-// 	const accessToken = jwt.sign({ email: email }, process.env.tokenSecret, {
-// 		expiresIn: process.env.tokenLife
-// 	});
-
-// 	User.findOne({ email: email })
-// 		.then(user => {
-// 			if (!user) {
-// 				return res.json({ error: 'User does not exist' });
-// 			}
-// 			if (!bcrypt.compareSync(password, user.password)) {
-// 				return res.json({ error: 'User does not exist' });
-// 			}
-// 			let refreshToken = null;
-// 			for (let i = 0; i < user.refreshToken.length; i++) {
-// 				if (ip == user.refreshToken[i].ip) {
-// 					refreshToken = user.refreshToken[i].token;
-// 					break;
-// 				}
-// 			}
-// 			if (!refreshToken) {
-// 				refreshToken = jwt.sign(
-// 					{ email: email },
-// 					process.env.refreshTokenSecret
-// 				);
-
-// 				let newRefreshToken = {};
-// 				newRefreshToken.ip = ip;
-// 				newRefreshToken.token = refreshToken;
-// 				user.refreshToken.push(newRefreshToken);
-// 				saveUser(user, res, accessToken, refreshToken);
-// 			} else {
-// 				res.header('refresh-token', refreshToken);
-// 				return res.header('access-token', accessToken).send({ user: user });
-// 			}
-// 		})
-// 	.catch(error => {
-// 		return res.json({ error: error.message });
-// 	});
-// });
+router.post('/login', (req, res) => {
+	const email = req.body.email;
+	const password = req.body.password;
+	if (!email || !password) {
+		return res.json({ error: 'insufficient data' });
+	}
+	let userRefreshToken;
+	let currentUser;
+	User.findByCredentials(email, password)
+		.then(user => {
+			currentUser = user;
+			return User.findOrCreateSession(req, email, currentUser);
+		})
+		.then(refreshToken => {
+			userRefreshToken = refreshToken;
+			return currentUser.generateAccessToken();
+		})
+		.then(userAccessToken => {
+			res
+				.header('x-refresh-token', userRefreshToken)
+				.header('x-access-token', userAccessToken)
+				.send(currentUser);
+		})
+		.catch(error => {
+			res.json({ error: error.message });
+		});
+});
 
 // router.get('/getaccesstoken', verifyRefreshToken, (req, res) => {
 // 	const user = req.user;

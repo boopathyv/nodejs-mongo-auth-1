@@ -17,7 +17,7 @@ const userSchema = mongoose.Schema({
 	},
 	password: {
 		type: String,
-		minlenght: 8,
+		minlength: 8,
 		required: true
 	},
 	isVerified: {
@@ -55,11 +55,44 @@ userSchema.methods.toJSON = function() {
 	return userObject;
 };
 
+userSchema.statics.findOrCreateSession = function(req, email, userDoc) {
+	let User = this;
+	const userAgent = getUserAgent(req);
+	return User.findOne(
+		{
+			email
+		},
+		{
+			sessions: {
+				$elemMatch: {
+					ip: userAgent.ip,
+					browser: userAgent.browser,
+					os: userAgent.os
+				}
+			}
+		}
+	)
+		.then(user => {
+			if (user !== null) {
+				if (user.sessions.length !== 0) {
+					return user.sessions[0].token;
+				} else {
+					return userDoc.createSession(req);
+				}
+			} else {
+				return Promise.reject(new Error('User not found'));
+			}
+		})
+		.catch(error => {
+			return Promise.reject(new Error(error));
+		});
+};
+
 userSchema.methods.createSession = function(req) {
 	let user = this;
 	const userAgent = getUserAgent(req);
 	const session = {};
-	session.ip = req.ip;
+	session.ip = userAgent.ip;
 	session.token = user.generateRefreshToken();
 	session.browser = userAgent.browser;
 	session.os = userAgent.os;
@@ -90,6 +123,24 @@ userSchema.methods.generateAccessToken = function() {
 	return accessToken;
 };
 
+/* Static methods */
+userSchema.statics.findByCredentials = function(email, password) {
+	let User = this;
+	return User.findOne({ email }).then(user => {
+		if (!user) return Promise.reject(new Error('user not found'));
+
+		return new Promise((resolve, reject) => {
+			bcrypt.compare(password, user.password, (err, res) => {
+				if (res) {
+					resolve(user);
+				} else {
+					reject(new Error('password does not match'));
+				}
+			});
+		});
+	});
+};
+
 /* helper methods */
 const saveSession = (user, session) => {
 	return new Promise((resolve, reject) => {
@@ -110,8 +161,6 @@ const saveSession = (user, session) => {
 			});
 	});
 };
-
-userSchema.methods.checkPassword = function() {};
 
 const User = mongoose.model('users', userSchema);
 
