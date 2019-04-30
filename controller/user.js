@@ -88,16 +88,14 @@ router.post('/deletetoken', verifyAccessToken, isUserVerified, (req, res) => {
 	if (!sessionDocId) {
 		return res.json({ error: 'insufficient data' });
 	}
-
-	user.sessions.id(sessionDocId).remove();
-	user
-		.save()
-		.then(user => {
+	try {
+		user.sessions.id(sessionDocId).remove();
+		user.save().then(user => {
 			res.json({ user: user });
-		})
-		.catch(error => {
-			res.json({ error: error.message });
 		});
+	} catch (e) {
+		res.json({ error: e.message });
+	}
 });
 
 router.get('/gettokens', verifyAccessToken, isUserVerified, (req, res) => {
