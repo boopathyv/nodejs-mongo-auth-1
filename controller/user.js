@@ -2,15 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/userModel');
-const jwt = require('jsonwebtoken');
-const {
-	verifyAccessToken,
-	verifyRefreshToken
-} = require('../middleware/verifyToken');
-const { getAccessToken, getRefreshToken } = require('../utils/getToken');
+const { verifyAccessToken } = require('../middleware/verifyAccessToken');
+const { verifyRefreshToken } = require('../middleware/verifyRefreshToken');
+const { getAccessToken } = require('../utils/getToken');
 const { isUserVerified } = require('../middleware/isUserVerified');
-const bcrypt = require('bcryptjs');
-const { getUserAgent } = require('../utils/getUserAgent');
 
 router.post('/signup', (req, res) => {
 	const name = req.body.name;
